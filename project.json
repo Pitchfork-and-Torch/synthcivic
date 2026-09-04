@@ -1,0 +1,12 @@
+{
+  "slug": "synthcivic-ai-augmented-open-deliberation-toolkit",
+  "title": "SynthCivic v1.0.0 deliberation toolkit (v1.0.0)",
+  "projectTitle": "SynthCivic: AI-Augmented Open Deliberation & Consensus Toolkit",
+  "version": "v1.0.0",
+  "sealedAt": "2026-09-04T03:29:23.374Z",
+  "license": "MIT / Apache-2.0",
+  "proposerHandle": "SuddenlyJon",
+  "sealNote": "v1.0.0 packs human-authority deliberation rails, process-not-person detectors, offline protocol sims, a public ledger schema, and an NGO/local-government deploy checklist under MIT/Apache-2.0. Labor plus optional compute pots only. Funding goal $0. Forged on GrokForge.",
+  "acceptedDeliverables": 9,
+  "forgedOn": "GrokForge"
+}
