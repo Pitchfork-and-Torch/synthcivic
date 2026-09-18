@@ -15,6 +15,7 @@ Forged on GrokForge
 - [x] Empty / write-in ballots do not crash tallies
 - [x] Plurality/approval first-place ties return winner None (no invented sole winner)
 - [x] Borda score ties return winner None (no invented sole winner)
+- [x] IRV first-place / elimination ties return winner None (no invented sole winner)
 - [x] MIT header
 
 
@@ -44,7 +45,7 @@ Forged on GrokForge
 - IIA: none of IRV/Borda/plurality satisfy in general
 - Later-no-harm: IRV closer than Borda
 - Explainability: every method returns a tally or round list
-- Ties: plurality/approval/Borda return winner=None (protocol: extra speak round) instead of inventing a sole winner
+- Ties: plurality/approval/Borda/IRV return winner=None (protocol: extra speak round) instead of inventing a sole winner
 
 ## Worked example
 
@@ -171,9 +172,17 @@ def irv(ballots: list[Ballot], candidates: Sequence[str]) -> dict:
         cast_any = True
         best, n = tally.most_common(1)[0]
         if n * 2 > total:
+            # Majority must be unique; equal top tallies are a tie (extra speak round).
+            leaders = [c for c, v in tally.items() if v == n]
+            if len(leaders) > 1:
+                return {"method": "irv", "winner": None, "rounds": rounds, "tie": True}
             return {"method": "irv", "winner": best, "rounds": rounds}
         worst_n = min(tally.get(c, 0) for c in remaining)
         losers = [c for c in remaining if tally.get(c, 0) == worst_n]
+        # If every remaining candidate is tied for last, do not invent a sole winner
+        # by alphabetical elimination (matches plurality/approval/Borda fail-closed ties).
+        if len(losers) == len(remaining):
+            return {"method": "irv", "winner": None, "rounds": rounds, "tie": True}
         # eliminate one loser deterministically by name for reproducibility
         loser = sorted(losers)[0]
         remaining.remove(loser)
