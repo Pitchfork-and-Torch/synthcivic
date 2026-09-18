@@ -41,6 +41,7 @@ Kinds: ai_intervention | decision | override | pause | note
 - Payload holds summaries, not raw speech
 - No emails, phones, real names
 - AI interventions must use actor_role=facilitator_ai
+- AI interventions always store human_authority=false (enforced)
 - AI cannot write `decision` entries (enforced)
 
 ## Example entries
@@ -137,6 +138,9 @@ class Ledger:
             raise ValueError("ai_intervention must be logged as facilitator_ai")
         if kind == "decision" and actor_role == "facilitator_ai":
             raise ValueError("AI cannot author a decision entry")
+        # AI acts are never human authority; default True would falsify the audit rail.
+        if kind == "ai_intervention":
+            human_authority = False
         body = {
             "seq": len(self.entries),
             "prev_hash": self._prev(),
