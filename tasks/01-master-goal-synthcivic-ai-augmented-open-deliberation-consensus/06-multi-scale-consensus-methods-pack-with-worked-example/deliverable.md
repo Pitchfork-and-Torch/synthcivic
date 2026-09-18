@@ -129,7 +129,10 @@ def borda(ballots: Iterable[Ballot], candidates: Sequence[str]) -> dict:
 def irv(ballots: list[Ballot], candidates: Sequence[str]) -> dict:
     remaining = set(candidates)
     rounds: list[dict] = []
+    if not remaining:
+        return {"method": "irv", "winner": None, "rounds": rounds}
     working = [list(b) for b in ballots]
+    cast_any = False
     while remaining:
         tops = []
         for b in working:
@@ -140,12 +143,16 @@ def irv(ballots: list[Ballot], candidates: Sequence[str]) -> dict:
         rounds.append(dict(tally))
         total = sum(tally.values())
         if not tally:
-            # All remaining ballots blank for this slate  -  eliminate deterministically.
+            # No in-slate rankings at all: do not invent a winner by elimination.
+            if not cast_any:
+                return {"method": "irv", "winner": None, "rounds": rounds}
+            # Later blank after real rounds — eliminate deterministically.
             loser = sorted(remaining)[0]
             remaining.remove(loser)
             if len(remaining) == 1:
                 return {"method": "irv", "winner": next(iter(remaining)), "rounds": rounds}
             continue
+        cast_any = True
         best, n = tally.most_common(1)[0]
         if n * 2 > total:
             return {"method": "irv", "winner": best, "rounds": rounds}
