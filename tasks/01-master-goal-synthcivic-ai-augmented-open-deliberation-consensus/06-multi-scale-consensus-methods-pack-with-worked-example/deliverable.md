@@ -13,6 +13,7 @@ Forged on GrokForge
 - [x] Worked example (7 voters)
 - [x] Explainability notes
 - [x] Empty / write-in ballots do not crash tallies
+- [x] Plurality/approval first-place ties return winner None (no invented sole winner)
 - [x] MIT header
 
 
@@ -42,6 +43,7 @@ Forged on GrokForge
 - IIA: none of IRV/Borda/plurality satisfy in general
 - Later-no-harm: IRV closer than Borda
 - Explainability: every method returns a tally or round list
+- Ties: plurality/approval return winner=None (protocol: extra speak round) instead of inventing a sole winner
 
 ## Worked example
 
@@ -91,7 +93,11 @@ def plurality(ballots: Iterable[Ballot]) -> dict:
     c = Counter(tops)
     if not c:
         return {"method": "plurality", "winner": None, "tally": {}, "n": 0}
-    winner, n = c.most_common(1)[0]
+    ranked = c.most_common()
+    winner, n = ranked[0]
+    # First-place ties must not invent a sole winner (protocol: extra speak round).
+    if len(ranked) > 1 and ranked[1][1] == n:
+        return {"method": "plurality", "winner": None, "tally": dict(c), "n": n, "tie": True}
     return {"method": "plurality", "winner": winner, "tally": dict(c), "n": n}
 
 
@@ -103,7 +109,11 @@ def approval(ballots: Iterable[Approval]) -> dict:
         c.update(b)
     if not c:
         return {"method": "approval", "winner": None, "tally": {}, "n": n}
-    winner, _ = c.most_common(1)[0]
+    ranked = c.most_common()
+    winner, top = ranked[0]
+    # Approval-count ties must not invent a sole winner.
+    if len(ranked) > 1 and ranked[1][1] == top:
+        return {"method": "approval", "winner": None, "tally": dict(c), "n": n, "tie": True}
     return {"method": "approval", "winner": winner, "tally": dict(c), "n": n}
 
 
