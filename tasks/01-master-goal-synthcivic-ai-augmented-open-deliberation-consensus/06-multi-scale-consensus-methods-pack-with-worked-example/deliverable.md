@@ -12,6 +12,7 @@ Forged on GrokForge
 - [x] Fairness criteria
 - [x] Worked example (7 voters)
 - [x] Explainability notes
+- [x] Empty / write-in ballots do not crash tallies
 - [x] MIT header
 
 
@@ -88,6 +89,8 @@ Approval = Sequence[str]
 def plurality(ballots: Iterable[Ballot]) -> dict:
     tops = [b[0] for b in ballots if b]
     c = Counter(tops)
+    if not c:
+        return {"method": "plurality", "winner": None, "tally": {}, "n": 0}
     winner, n = c.most_common(1)[0]
     return {"method": "plurality", "winner": winner, "tally": dict(c), "n": n}
 
@@ -98,15 +101,21 @@ def approval(ballots: Iterable[Approval]) -> dict:
     for b in ballots:
         n += 1
         c.update(b)
+    if not c:
+        return {"method": "approval", "winner": None, "tally": {}, "n": n}
     winner, _ = c.most_common(1)[0]
     return {"method": "approval", "winner": winner, "tally": dict(c), "n": n}
 
 
 def borda(ballots: Iterable[Ballot], candidates: Sequence[str]) -> dict:
     scores = {c: 0 for c in candidates}
+    if not scores:
+        return {"method": "borda", "winner": None, "tally": {}}
     m = len(candidates)
     for b in ballots:
         for i, c in enumerate(b):
+            if c not in scores:
+                continue  # ignore write-ins outside the declared slate
             scores[c] += m - 1 - i
     winner = max(scores, key=lambda k: scores[k])
     return {"method": "borda", "winner": winner, "tally": scores}
@@ -125,6 +134,13 @@ def irv(ballots: list[Ballot], candidates: Sequence[str]) -> dict:
         tally = Counter(tops)
         rounds.append(dict(tally))
         total = sum(tally.values())
+        if not tally:
+            # All remaining ballots blank for this slate — eliminate deterministically.
+            loser = sorted(remaining)[0]
+            remaining.remove(loser)
+            if len(remaining) == 1:
+                return {"method": "irv", "winner": next(iter(remaining)), "rounds": rounds}
+            continue
         best, n = tally.most_common(1)[0]
         if n * 2 > total:
             return {"method": "irv", "winner": best, "rounds": rounds}
