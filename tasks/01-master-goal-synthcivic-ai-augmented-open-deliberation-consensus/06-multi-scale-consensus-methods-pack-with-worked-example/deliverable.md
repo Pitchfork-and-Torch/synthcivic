@@ -112,11 +112,16 @@ def borda(ballots: Iterable[Ballot], candidates: Sequence[str]) -> dict:
     if not scores:
         return {"method": "borda", "winner": None, "tally": {}}
     m = len(candidates)
+    ranked = 0
     for b in ballots:
         for i, c in enumerate(b):
             if c not in scores:
                 continue  # ignore write-ins outside the declared slate
             scores[c] += m - 1 - i
+            ranked += 1
+    # Empty / write-in-only elections must not invent a winner via max() on zeros.
+    if ranked == 0:
+        return {"method": "borda", "winner": None, "tally": scores}
     winner = max(scores, key=lambda k: scores[k])
     return {"method": "borda", "winner": winner, "tally": scores}
 
