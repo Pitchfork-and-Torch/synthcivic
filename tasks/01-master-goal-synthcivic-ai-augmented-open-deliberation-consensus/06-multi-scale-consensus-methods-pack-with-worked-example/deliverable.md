@@ -14,6 +14,7 @@ Forged on GrokForge
 - [x] Explainability notes
 - [x] Empty / write-in ballots do not crash tallies
 - [x] Plurality/approval first-place ties return winner None (no invented sole winner)
+- [x] Borda score ties return winner None (no invented sole winner)
 - [x] MIT header
 
 
@@ -43,7 +44,7 @@ Forged on GrokForge
 - IIA: none of IRV/Borda/plurality satisfy in general
 - Later-no-harm: IRV closer than Borda
 - Explainability: every method returns a tally or round list
-- Ties: plurality/approval return winner=None (protocol: extra speak round) instead of inventing a sole winner
+- Ties: plurality/approval/Borda return winner=None (protocol: extra speak round) instead of inventing a sole winner
 
 ## Worked example
 
@@ -132,7 +133,12 @@ def borda(ballots: Iterable[Ballot], candidates: Sequence[str]) -> dict:
     # Empty / write-in-only elections must not invent a winner via max() on zeros.
     if ranked == 0:
         return {"method": "borda", "winner": None, "tally": scores}
-    winner = max(scores, key=lambda k: scores[k])
+    top = max(scores.values())
+    leaders = [c for c, s in scores.items() if s == top]
+    # Borda score ties must not invent a sole winner (protocol: extra speak round).
+    if len(leaders) > 1:
+        return {"method": "borda", "winner": None, "tally": scores, "tie": True}
+    winner = leaders[0]
     return {"method": "borda", "winner": winner, "tally": scores}
 
 
